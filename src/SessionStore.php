@@ -1,10 +1,11 @@
 <?php
 namespace Gt\Session;
 
+use Countable;
 use Gt\TypeSafeGetter\NullableTypeSafeGetter;
 use Gt\TypeSafeGetter\TypeSafeGetter;
 
-class SessionStore implements SessionContainer, TypeSafeGetter {
+class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
 	use NullableTypeSafeGetter;
 
 	protected string $name;
@@ -25,6 +26,10 @@ class SessionStore implements SessionContainer, TypeSafeGetter {
 		$this->parentStore = $parentStore;
 		$this->stores = [];
 		$this->data = [];
+	}
+
+	public function count():int {
+		return count($this->data);
 	}
 
 	public function setData(string $key, mixed $value):void {

@@ -134,4 +134,21 @@ class SessionStoreTest extends TestCase {
 		$dateTime->setTimestamp($numericValue);
 		self::assertEquals($dateTime, $sut->getDateTime("test.value"));
 	}
+
+	public function testCount():void {
+		$session = $this->createMock(Session::class);
+		$sut = new SessionStore("test", $session);
+
+		$rawData = [
+			"one" => "first",
+			"two" => "second",
+			"three" => "third",
+		];
+
+		foreach($rawData as $key => $value) {
+			$sut->set($key, $value);
+		}
+
+		self::assertCount(3, $sut);
+	}
 }
