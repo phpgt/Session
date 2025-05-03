@@ -2,6 +2,7 @@
 namespace Gt\Session;
 
 use ArrayAccess;
+use ArrayObject;
 use Gt\TypeSafeGetter\NullableTypeSafeGetter;
 use Gt\TypeSafeGetter\TypeSafeGetter;
 use SessionHandlerInterface;
@@ -24,15 +25,20 @@ class Session implements SessionContainer, TypeSafeGetter {
 	protected string $id;
 	protected SessionHandlerInterface $sessionHandler;
 	protected ?SessionStore $store;
+	/** @var ArrayAccess<string, string> */
+	protected ArrayAccess $config;
 
 	/** @param ArrayAccess<string,string>|array<string, string> $config */
 	public function __construct(
 		SessionHandlerInterface $sessionHandler,
-		private array|ArrayAccess $config = [],
-		string $id = null,
+		array|ArrayAccess $config = [],
+		?string $id = null,
 	) {
 		$this->sessionHandler = $sessionHandler;
 
+		if(is_array($config)) {
+			$config = new ArrayObject($config);
+		}
 		$this->setIniDefaults($config);
 
 		if(is_null($id)) {
@@ -120,8 +126,10 @@ class Session implements SessionContainer, TypeSafeGetter {
 		return $path;
 	}
 
+	/** @SuppressWarnings(PHPMD.Superglobals) */
 	protected function createNewId():string {
-		if($this->config->offsetGet("use_trans_sid") && !$this->config->offsetGet("use_cookies")) {
+		if($this->config->offsetGet("use_trans_sid")
+		&& !$this->config->offsetGet("use_cookies")) {
 			return $_GET[$this->config->offsetGet("name")] ?? session_create_id();
 		}
 		return session_create_id() ?: "";

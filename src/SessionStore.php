@@ -19,7 +19,7 @@ class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
 	public function __construct(
 		string $name,
 		Session $session,
-		self $parentStore = null
+		?self $parentStore = null
 	) {
 		$this->name = $name;
 		$this->session = $session;
@@ -178,7 +178,7 @@ class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
 		return $key;
 	}
 
-	public function remove(string $key = null):void {
+	public function remove(?string $key = null):void {
 		if(is_null($key)) {
 			foreach(array_keys($this->stores) as $i) {
 				unset($this->stores[$i]);
