@@ -28,7 +28,7 @@ class Session implements SessionContainer, TypeSafeGetter {
 	/** @param ArrayAccess<string,string>|array<string, string> $config */
 	public function __construct(
 		SessionHandlerInterface $sessionHandler,
-		array|ArrayAccess $config = [],
+		private array|ArrayAccess $config = [],
 		string $id = null,
 	) {
 		$this->sessionHandler = $sessionHandler;
@@ -121,6 +121,9 @@ class Session implements SessionContainer, TypeSafeGetter {
 	}
 
 	protected function createNewId():string {
+		if($this->config->offsetGet("use_trans_sid") && !$this->config->offsetGet("use_cookies")) {
+			return $_GET[$this->config->offsetGet("name")] ?? session_create_id();
+		}
 		return session_create_id() ?: "";
 	}
 
@@ -168,6 +171,9 @@ class Session implements SessionContainer, TypeSafeGetter {
 				"save_path" => $sessionPath,
 				"name" => $sessionName,
 				"serialize_handler" => "php_serialize",
+				"use_only_cookies" => $config["use_only_cookies"] ?? true,
+				"use_cookies" => $config["use_cookies"] ?? true,
+				"use_trans_sid" => $config["use_trans_sid"] ?? false,
 				"cookie_lifetime" => $config["cookie_lifetime"]
 					?? self::DEFAULT_SESSION_LIFETIME,
 				"cookie_path" => $config["cookie_path"]
