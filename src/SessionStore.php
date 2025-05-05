@@ -1,10 +1,12 @@
 <?php
 namespace Gt\Session;
 
+use Countable;
 use Gt\TypeSafeGetter\NullableTypeSafeGetter;
 use Gt\TypeSafeGetter\TypeSafeGetter;
 
-class SessionStore implements SessionContainer, TypeSafeGetter {
+/** @SuppressWarnings(PHPMD.TooManyPublicMethods) */
+class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
 	use NullableTypeSafeGetter;
 
 	protected string $name;
@@ -18,13 +20,17 @@ class SessionStore implements SessionContainer, TypeSafeGetter {
 	public function __construct(
 		string $name,
 		Session $session,
-		self $parentStore = null
+		?self $parentStore = null
 	) {
 		$this->name = $name;
 		$this->session = $session;
 		$this->parentStore = $parentStore;
 		$this->stores = [];
 		$this->data = [];
+	}
+
+	public function count():int {
+		return count($this->data);
 	}
 
 	public function setData(string $key, mixed $value):void {
@@ -173,7 +179,7 @@ class SessionStore implements SessionContainer, TypeSafeGetter {
 		return $key;
 	}
 
-	public function remove(string $key = null):void {
+	public function remove(?string $key = null):void {
 		if(is_null($key)) {
 			foreach(array_keys($this->stores) as $i) {
 				unset($this->stores[$i]);
@@ -186,16 +192,16 @@ class SessionStore implements SessionContainer, TypeSafeGetter {
 		$store = $this;
 		$lastDotPosition = strrpos($key, ".");
 
-		if ($lastDotPosition !== false) {
+		if($lastDotPosition !== false) {
 			$namespace = $this->getNamespaceFromKey($key);
 			$store = $this->getStore($namespace);
 		}
 
-		if (is_null($store)) {
+		if(is_null($store)) {
 			return;
 		}
 
-		if ($lastDotPosition !== false) {
+		if($lastDotPosition !== false) {
 			$key = substr($key, $lastDotPosition + 1);
 		}
 

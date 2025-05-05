@@ -2,9 +2,11 @@
 namespace Gt\Session;
 
 use ArrayAccess;
+use ArrayObject;
 use Gt\TypeSafeGetter\NullableTypeSafeGetter;
 use Gt\TypeSafeGetter\TypeSafeGetter;
 use SessionHandlerInterface;
+use Traversable;
 
 class Session implements SessionContainer, TypeSafeGetter {
 	use NullableTypeSafeGetter;
@@ -24,16 +26,22 @@ class Session implements SessionContainer, TypeSafeGetter {
 	protected string $id;
 	protected SessionHandlerInterface $sessionHandler;
 	protected ?SessionStore $store;
+	/** @var array<string, mixed> */
+	protected array $config;
 
-	/** @param ArrayAccess<string,string>|array<string, string> $config */
+	/** @param iterable<string,mixed> $config */
 	public function __construct(
 		SessionHandlerInterface $sessionHandler,
-		private array|ArrayAccess $config = [],
-		string $id = null,
+		iterable $config = [],
+		?string $id = null,
 	) {
 		$this->sessionHandler = $sessionHandler;
 
-		$this->setIniDefaults($config);
+		if(!is_array($config)) {
+			$config = iterator_to_array($config);
+		}
+		/** @var array<string,mixed> $config */
+		$this->config = $config;
 
 		if(is_null($id)) {
 			$id = $this->getId();
@@ -120,9 +128,10 @@ class Session implements SessionContainer, TypeSafeGetter {
 		return $path;
 	}
 
+	/** @SuppressWarnings(PHPMD.Superglobals) */
 	protected function createNewId():string {
-		if($this->config->offsetGet("use_trans_sid") && !$this->config->offsetGet("use_cookies")) {
-			return $_GET[$this->config->offsetGet("name")] ?? session_create_id();
+		if($this->config["use_trans_sid"] && !$this->config["use_cookies"]) {
+			return $_GET[$this->config["name"]] ?? session_create_id();
 		}
 		return session_create_id() ?: "";
 	}
@@ -138,63 +147,77 @@ class Session implements SessionContainer, TypeSafeGetter {
 		);
 	}
 
-	/** @param ArrayAccess<string, string>|array<string, string> $config */
-	private function setIniDefaults(ArrayAccess|array $config):void {
-		ini_set(
-			"session.sid_length",
-			$config["sid_length"]
-			?? self::DEFAULT_SESSION_ID_LENGTH
-		);
-		ini_set(
-			"session.sid_bits_per_character",
-			$config["sid_bits_per_character"]
-			?? (string)self::DEFAULT_SESSION_ID_BITS_PER_CHARACTER
-		);
-	}
-
 	/**
 	 * @param string $sessionPath
 	 * @param string $sessionName
-	 * @param ArrayAccess<string, string>|array<string, string> $config
+	 * @param array<string,mixed> $config
 	 * @return void
 	 */
 	private function attemptStart(
 		string $sessionPath,
 		string $sessionName,
-		ArrayAccess|array $config,
+		array $config,
 	):void {
-// Allow a single failure to start session. If it fails to start,
-		// destroy the existing session.
+		$sessionOptions = $this->getSessionOptions(
+			$sessionPath,
+			$sessionName,
+			$config,
+		);
+		$this->tryStartSession($sessionOptions);
+	}
+
+	/**
+	 * @param array<string,mixed> $config
+	 * @return array<string,mixed>
+	 */
+	private function getSessionOptions(
+		string $sessionPath,
+		string $sessionName,
+		array $config
+	):array {
+		$defaultConfig = [
+			"use_only_cookies" => true,
+			"use_cookies" => true,
+			"use_trans_sid" => false,
+			"cookie_lifetime" => self::DEFAULT_SESSION_LIFETIME,
+			"cookie_path" => self::DEFAULT_COOKIE_PATH,
+			"cookie_domain" => self::DEFAULT_SESSION_DOMAIN,
+			"cookie_secure" => self::DEFAULT_SESSION_SECURE,
+			"cookie_httponly" => self::DEFAULT_SESSION_HTTPONLY,
+			"cookie_samesite" => self::DEFAULT_COOKIE_SAMESITE,
+			"use_strict_mode" => self::DEFAULT_STRICT_MODE,
+		];
+
+		$config = array_merge($defaultConfig, $config);
+
+		return [
+			"save_path" => $sessionPath,
+			"name" => $sessionName,
+			"serialize_handler" => "php_serialize",
+			"use_only_cookies" => $config["use_only_cookies"],
+			"use_cookies" => $config["use_cookies"],
+			"use_trans_sid" => $config["use_trans_sid"],
+			"cookie_lifetime" => $config["cookie_lifetime"],
+			"cookie_path" => $config["cookie_path"],
+			"cookie_domain" => $config["cookie_domain"],
+			"cookie_secure" => $config["cookie_secure"],
+			"cookie_httponly" => $config["cookie_httponly"],
+			"cookie_samesite" => $config["cookie_samesite"],
+			"use_strict_mode" => $config["use_strict_mode"],
+		];
+	}
+
+	/** @param array<string,mixed> $sessionOptions */
+	private function tryStartSession(array $sessionOptions):void {
 		$startAttempts = 0;
 		do {
-			$success = session_start([
-				"save_path" => $sessionPath,
-				"name" => $sessionName,
-				"serialize_handler" => "php_serialize",
-				"use_only_cookies" => $config["use_only_cookies"] ?? true,
-				"use_cookies" => $config["use_cookies"] ?? true,
-				"use_trans_sid" => $config["use_trans_sid"] ?? false,
-				"cookie_lifetime" => $config["cookie_lifetime"]
-					?? self::DEFAULT_SESSION_LIFETIME,
-				"cookie_path" => $config["cookie_path"]
-					?? self::DEFAULT_COOKIE_PATH,
-				"cookie_domain" => $config["cookie_domain"]
-					?? self::DEFAULT_SESSION_DOMAIN,
-				"cookie_secure" => $config["cookie_secure"]
-					?? self::DEFAULT_SESSION_SECURE,
-				"cookie_httponly" => $config["cookie_httponly"]
-					?? self::DEFAULT_SESSION_HTTPONLY,
-				"cookie_samesite" => $config["cookie_samesite"]
-					?? self::DEFAULT_COOKIE_SAMESITE,
-				"use_strict_mode" => $config["use_strict_mode"]
-					?? self::DEFAULT_STRICT_MODE,
-			]);
-
+			$success = session_start($sessionOptions);
 			if(!$success) {
-				// phpcs:ignore
+				//phpcs:ignore
 				@session_destroy();
 			}
 			$startAttempts++;
-		} while(!$success && $startAttempts <= 1);
+		}
+		while(!$success && $startAttempts <= 1);
 	}
 }
