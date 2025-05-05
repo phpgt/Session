@@ -151,4 +151,25 @@ class SessionStoreTest extends TestCase {
 
 		self::assertCount(3, $sut);
 	}
+
+
+	public function testSessionStoreIsIterable():void {
+		$session = $this->createMock(Session::class);
+		$sut = new SessionStore("test", $session);
+
+		$rawData = [
+			"key1" => "value1",
+			"key2" => "value2",
+			"key3" => "value3",
+		];
+
+		foreach($rawData as $key => $value) {
+			$sut->set($key, $value);
+		}
+
+		foreach($sut as $key => $value) {
+			self::assertArrayHasKey($key, $rawData);
+			self::assertSame($rawData[$key], $value);
+		}
+	}
 }

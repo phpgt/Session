@@ -1,20 +1,24 @@
 <?php
 namespace Gt\Session;
 
+use ArrayIterator;
 use Countable;
 use Gt\TypeSafeGetter\NullableTypeSafeGetter;
 use Gt\TypeSafeGetter\TypeSafeGetter;
 
-/** @SuppressWarnings(PHPMD.TooManyPublicMethods) */
-class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
+/**
+ * @extends ArrayIterator<string, mixed>
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ */
+class SessionStore
+	extends ArrayIterator
+	implements SessionContainer, TypeSafeGetter, Countable {
 	use NullableTypeSafeGetter;
 
 	protected string $name;
 	protected Session $session;
 	/** @var array<SessionStore> */
 	protected array $stores;
-	/** @var array<string, mixed> */
-	protected array $data;
 	protected ?SessionStore $parentStore;
 
 	public function __construct(
@@ -26,23 +30,19 @@ class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
 		$this->session = $session;
 		$this->parentStore = $parentStore;
 		$this->stores = [];
-		$this->data = [];
-	}
-
-	public function count():int {
-		return count($this->data);
+		parent::__construct();
 	}
 
 	public function setData(string $key, mixed $value):void {
-		$this->data[$key] = $value;
+		$this->offsetSet($key, $value);
 	}
 
 	public function getData(string $key):mixed {
-		return $this->data[$key] ?? null;
+		return $this->offsetGet($key) ?? null;
 	}
 
 	public function containsData(string $key):bool {
-		return isset($this->data[$key]);
+		return $this->offsetExists($key);
 	}
 
 	public function containsStore(string $key):bool {
@@ -50,7 +50,7 @@ class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
 	}
 
 	public function removeData(string $key):void {
-		unset($this->data[$key]);
+		$this->offsetUnset($key);
 	}
 
 	public function removeStore(string $key):void {
