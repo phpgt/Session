@@ -5,6 +5,7 @@ use Countable;
 use Gt\TypeSafeGetter\NullableTypeSafeGetter;
 use Gt\TypeSafeGetter\TypeSafeGetter;
 
+/** @SuppressWarnings(PHPMD.TooManyPublicMethods) */
 class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
 	use NullableTypeSafeGetter;
 
@@ -191,16 +192,16 @@ class SessionStore implements SessionContainer, TypeSafeGetter, Countable {
 		$store = $this;
 		$lastDotPosition = strrpos($key, ".");
 
-		if ($lastDotPosition !== false) {
+		if($lastDotPosition !== false) {
 			$namespace = $this->getNamespaceFromKey($key);
 			$store = $this->getStore($namespace);
 		}
 
-		if (is_null($store)) {
+		if(is_null($store)) {
 			return;
 		}
 
-		if ($lastDotPosition !== false) {
+		if($lastDotPosition !== false) {
 			$key = substr($key, $lastDotPosition + 1);
 		}
 
