@@ -38,7 +38,11 @@ class SessionStore
 	}
 
 	public function getData(string $key):mixed {
-		return $this->offsetGet($key) ?? null;
+		if(!$this->offsetExists($key)) {
+			return null;
+		}
+
+		return $this->offsetGet($key);
 	}
 
 	public function containsData(string $key):bool {
