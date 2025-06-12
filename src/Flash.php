@@ -18,7 +18,7 @@ class Flash {
 	}
 
 	public function consume(string $name):?FlashMessage {
-		/** @var null|SplQueue $queue */
+		/** @var null|SplQueue<FlashMessage> $queue */
 		$queue = $this->session->get("queue.$name");
 		try {
 			return $queue->dequeue();

@@ -130,7 +130,8 @@ class Session implements SessionContainer, TypeSafeGetter {
 
 	/** @SuppressWarnings(PHPMD.Superglobals) */
 	protected function createNewId():string {
-		if(($this->config["use_trans_sid"] ?? null) && !$this->config["use_cookies"]) {
+		if(($this->config["use_trans_sid"] ?? null)
+		&& !$this->config["use_cookies"]) {
 			return $_GET[$this->config["name"]] ?? session_create_id();
 		}
 		return session_create_id() ?: "";
