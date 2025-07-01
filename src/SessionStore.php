@@ -71,6 +71,10 @@ class SessionStore
 	}
 
 	public function write():void {
+		if(!isset($this->session)) {
+			return;
+		}
+
 		$this->session->write();
 	}
 
