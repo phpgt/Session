@@ -3,9 +3,11 @@ namespace Gt\Session;
 
 use ArrayAccess;
 use ArrayObject;
+use Exception;
 use Gt\TypeSafeGetter\NullableTypeSafeGetter;
 use Gt\TypeSafeGetter\TypeSafeGetter;
 use SessionHandlerInterface;
+use Throwable;
 use Traversable;
 
 class Session implements SessionContainer, TypeSafeGetter {
@@ -128,18 +130,30 @@ class Session implements SessionContainer, TypeSafeGetter {
 		return $path;
 	}
 
-	/** @SuppressWarnings(PHPMD.Superglobals) */
+	/** @SuppressWarnings("PHPMD.Superglobals") */
 	protected function createNewId():string {
 		if(($this->config["use_trans_sid"] ?? null)
-		&& !$this->config["use_cookies"]) {
+			&& !$this->config["use_cookies"]) {
 			return $_GET[$this->config["name"]] ?? session_create_id();
 		}
 		return session_create_id() ?: "";
 	}
 
+	/** @SuppressWarnings("PHPMD.EmptyCatchBlock") */
 	protected function readSessionData():?SessionStore {
-		return unserialize($this->sessionHandler->read($this->id)) ?: null;
+		try {
+			$data = $this->sessionHandler->read($this->id) ?: "";
+			$store = unserialize($data);
+			if ($store instanceof SessionStore) {
+				return $store;
+			}
+		}
+		// PHPCS:ignore
+		catch (Throwable) {}
+
+		return null;
 	}
+
 
 	public function write():bool {
 		return $this->sessionHandler->write(
@@ -208,14 +222,24 @@ class Session implements SessionContainer, TypeSafeGetter {
 		];
 	}
 
-	/** @param array<string,mixed> $sessionOptions */
+	/**
+	 * @param array<string,mixed> $sessionOptions
+	 * @SuppressWarnings("PHPMD.EmptyCatchBlock")
+	 */
 	private function tryStartSession(array $sessionOptions):void {
 		$startAttempts = 0;
 		do {
-			$success = session_start($sessionOptions);
+			$success = false;
+
+			try {
+				$success = session_start($sessionOptions);
+			}
+			// PHPCS:ignore
+			catch(Throwable) {}
+
 			if(!$success) {
-				//phpcs:ignore
-				@session_destroy();
+				session_destroy();
+				session_regenerate_id(true);
 			}
 			$startAttempts++;
 		}

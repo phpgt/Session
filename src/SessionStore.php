@@ -8,7 +8,7 @@ use Gt\TypeSafeGetter\TypeSafeGetter;
 
 /**
  * @extends ArrayIterator<string, mixed>
- * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 class SessionStore
 	extends ArrayIterator
@@ -71,10 +71,6 @@ class SessionStore
 	}
 
 	public function write():void {
-		if(!isset($this->session)) {
-			return;
-		}
-
 		$this->session->write();
 	}
 
