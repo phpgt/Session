@@ -130,7 +130,7 @@ class Session implements SessionContainer, TypeSafeGetter {
 		return $path;
 	}
 
-	/** @SuppressWarnings(PHPMD.Superglobals) */
+	/** @SuppressWarnings("PHPMD.Superglobals") */
 	protected function createNewId():string {
 		if(($this->config["use_trans_sid"] ?? null)
 			&& !$this->config["use_cookies"]) {
@@ -139,14 +139,17 @@ class Session implements SessionContainer, TypeSafeGetter {
 		return session_create_id() ?: "";
 	}
 
+	/** @SuppressWarnings("PHPMD.EmptyCatchBlock") */
 	protected function readSessionData():?SessionStore {
 		try {
-			$data = $this->sessionHandler->read($this->id);
+			$data = $this->sessionHandler->read($this->id) ?: "";
 			$store = unserialize($data);
 			if ($store instanceof SessionStore) {
 				return $store;
 			}
-		} catch (Throwable $e) {}
+		}
+		// PHPCS:ignore
+		catch (Throwable) {}
 
 		return null;
 	}
@@ -219,7 +222,10 @@ class Session implements SessionContainer, TypeSafeGetter {
 		];
 	}
 
-	/** @param array<string,mixed> $sessionOptions */
+	/**
+	 * @param array<string,mixed> $sessionOptions
+	 * @SuppressWarnings("PHPMD.EmptyCatchBlock")
+	 */
 	private function tryStartSession(array $sessionOptions):void {
 		$startAttempts = 0;
 		do {
@@ -228,6 +234,7 @@ class Session implements SessionContainer, TypeSafeGetter {
 			try {
 				$success = session_start($sessionOptions);
 			}
+			// PHPCS:ignore
 			catch(Throwable) {}
 
 			if(!$success) {

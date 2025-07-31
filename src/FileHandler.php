@@ -6,7 +6,7 @@ use DirectoryIterator;
 class FileHandler extends Handler {
 	const EMPTY_PHP_ARRAY = "a:0:{}";
 	protected string $path;
-	/** @var array<string, mixed>> */
+	/** @var array<string, mixed> $cache */
 	protected array $cache;
 
 	/**
