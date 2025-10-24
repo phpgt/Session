@@ -19,6 +19,9 @@ class SessionSetup {
 
 // There is no need to set the save handler on the inbuilt SessionHandler as
 // it's already set.
+		if(session_status() === PHP_SESSION_ACTIVE) {
+			return $sessionHandler;
+		}
 		if($handlerClass !== SessionHandler::class) {
 			session_set_save_handler($sessionHandler, true);
 		}
