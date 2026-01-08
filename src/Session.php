@@ -232,14 +232,20 @@ class Session implements SessionContainer, TypeSafeGetter {
 			$success = false;
 
 			try {
-				$success = session_start($sessionOptions);
+				if(session_status() !== PHP_SESSION_ACTIVE) {
+					$success = session_start($sessionOptions);
+				}
 			}
 			// PHPCS:ignore
 			catch(Throwable) {}
 
 			if(!$success) {
-				session_destroy();
-				session_regenerate_id(true);
+				if(session_status() === PHP_SESSION_ACTIVE) {
+					session_destroy();
+				}
+				if(session_id()) {
+					session_regenerate_id(true);
+				}
 			}
 			$startAttempts++;
 		}
