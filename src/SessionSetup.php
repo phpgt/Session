@@ -6,7 +6,7 @@ use SessionHandler;
 use SessionHandlerInterface;
 
 class SessionSetup {
-	public static function attachHandler(
+	public function attachHandler(
 		string $handlerClass = SessionHandler::class
 	):SessionHandlerInterface {
 // Ensure class name is fully qualified.
