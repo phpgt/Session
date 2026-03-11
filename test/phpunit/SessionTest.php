@@ -37,6 +37,18 @@ class SessionTest extends TestCase {
 		);
 	}
 
+	public function testSessionStartPreservesDsnSavePath():void {
+		$handler = self::createMock(Handler::class);
+		$savePath = "valkey://cache.internal:6379/0?ttl=1440";
+
+		new Session($handler, [
+			"save_path" => $savePath,
+		]);
+
+		$sessionStartParameter = FunctionMocker::$mockCalls["session_start"][0][0];
+		self::assertSame($savePath, $sessionStartParameter["save_path"]);
+	}
+
 	public function testWriteSessionDataCalled() {
 		$handler = self::createMock(Handler::class);
 		$handler->expects($this->exactly(2))
