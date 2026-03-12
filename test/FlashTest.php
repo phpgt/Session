@@ -2,12 +2,12 @@
 
 use Gt\Session\Flash;
 use Gt\Session\FlashMessage;
-use Gt\Session\SessionStore;
+use Gt\Session\SessionStoreInterface;
 use PHPUnit\Framework\TestCase;
 
 class FlashTest extends TestCase {
 	public function testPut():void {
-		$sessionStore = self::createMock(SessionStore::class);
+		$sessionStore = self::createMock(SessionStoreInterface::class);
 		$sessionStore->expects(self::once())
 			->method("get")
 			->with("queue.test")
@@ -28,7 +28,7 @@ class FlashTest extends TestCase {
 		$queue->expects(self::once())
 			->method("dequeue")
 			->willThrowException(new RuntimeException("Can't shift from an empty datastructure"));
-		$sessionStore = self::createMock(SessionStore::class);
+		$sessionStore = self::createMock(SessionStoreInterface::class);
 		$sessionStore->expects(self::once())
 			->method("get")
 			->with("queue.test")
@@ -47,7 +47,7 @@ class FlashTest extends TestCase {
 			->method("dequeue")
 			->willReturnOnConsecutiveCalls($fm1, $fm2);
 
-		$sessionStore = self::createMock(SessionStore::class);
+		$sessionStore = self::createMock(SessionStoreInterface::class);
 		$sessionStore->expects(self::exactly(3))
 			->method("get")
 			->with("queue.test")

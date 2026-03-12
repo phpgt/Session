@@ -5,6 +5,7 @@ use DateTime;
 use Gt\Session\Handler;
 use Gt\Session\Session;
 use Gt\Session\SessionStore;
+use Gt\Session\SessionStoreInterface;
 use Gt\Session\Test\Helper\FunctionMocker;
 use Gt\Session\Test\Helper\DataProvider\KeyValuePairProvider;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -171,5 +172,11 @@ class SessionStoreTest extends TestCase {
 			self::assertArrayHasKey($key, $rawData);
 			self::assertSame($rawData[$key], $value);
 		}
+	}
+
+	public function testSessionStoreImplementsInterface():void {
+		$session = $this->createMock(Session::class);
+		$sut = new SessionStore("test", $session);
+		self::assertInstanceOf(SessionStoreInterface::class, $sut);
 	}
 }

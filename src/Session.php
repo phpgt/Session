@@ -81,7 +81,7 @@ class Session implements SessionContainer, TypeSafeGetter {
 	public function getStore(
 		string $namespace,
 		bool $createIfNotExists = false
-	):?SessionStore {
+	):?SessionStoreInterface {
 		return $this->store->getStore(
 			$namespace,
 			$createIfNotExists

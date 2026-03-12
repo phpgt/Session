@@ -5,7 +5,7 @@ use RuntimeException;
 use SplQueue;
 
 class Flash {
-	public function __construct(private readonly SessionStore $session) {}
+	public function __construct(private readonly SessionStoreInterface $session) {}
 
 	public function put(string $name, string $message):void {
 		$queue = $this->session->get("queue.$name");
