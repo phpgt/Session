@@ -7,7 +7,7 @@ use RuntimeException;
 class RedisHandler extends Handler {
 	private const DEFAULT_PORT = 6379;
 	private const DEFAULT_PREFIX_SEPARATOR = ":";
-	private ?object $client = null;
+	private ?Redis $client = null;
 	private string $prefix = "";
 	private int $ttl = 0;
 
@@ -53,7 +53,7 @@ class RedisHandler extends Handler {
 
 	public function read(string $sessionId):string {
 		$value = $this->requireClient()->get($this->getKey($sessionId));
-		return $value === false ? "" : $value;
+		return is_string($value) ? $value : "";
 	}
 
 	public function write(string $sessionId, string $sessionData):bool {
@@ -86,7 +86,7 @@ class RedisHandler extends Handler {
 	 *   ttl:int,
 	 *   database:int,
 	 *   auth:array{string,string}|string|null,
-	 *   context:?array<string,mixed>
+	 *   context:array{stream:array{verify_peer:bool,verify_peer_name:bool}}|null
 	 * }
 	 */
 	private function parseSavePath(string $savePath, string $name):array {
@@ -116,6 +116,7 @@ class RedisHandler extends Handler {
 				],
 			];
 		}
+		/** @var array{stream:array{verify_peer:bool,verify_peer_name:bool}}|null $context */
 
 		$auth = null;
 		if(isset($parts["user"]) && $parts["user"] !== "" && isset($parts["pass"])) {
@@ -125,16 +126,27 @@ class RedisHandler extends Handler {
 			$auth = rawurldecode($parts["pass"]);
 		}
 
+		$persistentId = null;
+		if(
+			isset($query["persistent"])
+			&& filter_var($query["persistent"], FILTER_VALIDATE_BOOL)
+		) {
+			$persistentId = is_string($query["persistent_id"] ?? null)
+				? $query["persistent_id"]
+				: "phpgt-session";
+		}
+
+		$prefix = is_string($query["prefix"] ?? null)
+			? $query["prefix"]
+			: $name . self::DEFAULT_PREFIX_SEPARATOR;
+
 		return [
 			"host" => $host,
 			"port" => (int)($parts["port"] ?? self::DEFAULT_PORT),
 			"timeout" => (float)($query["timeout"] ?? 0),
 			"readTimeout" => (float)($query["read_timeout"] ?? 0),
-			"persistentId" => isset($query["persistent"])
-				&& filter_var($query["persistent"], FILTER_VALIDATE_BOOL)
-				? ($query["persistent_id"] ?? "phpgt-session")
-				: null,
-			"prefix" => (string)($query["prefix"] ?? ($name . self::DEFAULT_PREFIX_SEPARATOR)),
+			"persistentId" => $persistentId,
+			"prefix" => $prefix,
 			"ttl" => (int)($query["ttl"] ?? ini_get("session.gc_maxlifetime")),
 			"database" => isset($parts["path"])
 				? (int)trim($parts["path"], "/")
@@ -148,7 +160,7 @@ class RedisHandler extends Handler {
 		return $this->prefix . $sessionId;
 	}
 
-	protected function createClient():object {
+	protected function createClient():Redis {
 		if(!class_exists(Redis::class)) {
 			throw new RuntimeException(
 				"The phpredis extension is required to use Gt\\Session\\RedisHandler."
@@ -158,7 +170,7 @@ class RedisHandler extends Handler {
 		return new Redis();
 	}
 
-	private function requireClient():object {
+	private function requireClient():Redis {
 		if(is_null($this->client)) {
 			throw new RuntimeException("RedisHandler::open() must be called before use.");
 		}

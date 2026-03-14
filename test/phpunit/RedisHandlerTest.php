@@ -3,6 +3,7 @@ namespace Gt\Session\Test;
 
 use Gt\Session\RedisHandler;
 use PHPUnit\Framework\TestCase;
+use Redis;
 
 class RedisHandlerTest extends TestCase {
 	public function testOpenParsesStandardDsn():void {
@@ -10,7 +11,8 @@ class RedisHandlerTest extends TestCase {
 		$sut = new class($client) extends RedisHandler {
 			public function __construct(private readonly TestRedisClient $client) {}
 
-			protected function createClient():object {
+			protected function createClient():Redis {
+				/** @phpstan-ignore-next-line */
 				return $this->client;
 			}
 		};
@@ -45,7 +47,8 @@ class RedisHandlerTest extends TestCase {
 		$sut = new class($client) extends RedisHandler {
 			public function __construct(private readonly TestRedisClient $client) {}
 
-			protected function createClient():object {
+			protected function createClient():Redis {
+				/** @phpstan-ignore-next-line */
 				return $this->client;
 			}
 		};
@@ -75,7 +78,8 @@ class RedisHandlerTest extends TestCase {
 		$sut = new class($client) extends RedisHandler {
 			public function __construct(private readonly TestRedisClient $client) {}
 
-			protected function createClient():object {
+			protected function createClient():Redis {
+				/** @phpstan-ignore-next-line */
 				return $this->client;
 			}
 		};
@@ -96,7 +100,7 @@ class TestRedisClient {
 	public array $setExCalls = [];
 	/** @var array<int,string> */
 	public array $setCalls = [];
-	/** @var array<int,array|string> */
+	/** @var array<int,array{string,string}|string> */
 	public array $authCalls = [];
 	/** @var array<int,int> */
 	public array $selectCalls = [];
@@ -105,6 +109,9 @@ class TestRedisClient {
 	public int $deleted = 0;
 	public bool $closed = false;
 
+	/**
+	 * @param array{auth?:array{0:string|false|null,1?:string},stream?:array<string,mixed>}|null $context
+	 */
 	public function connect(
 		string $host,
 		int $port,
@@ -126,6 +133,9 @@ class TestRedisClient {
 		return true;
 	}
 
+	/**
+	 * @param array{string,string}|string $credentials
+	 */
 	public function auth(array|string $credentials):bool {
 		$this->authCalls []= $credentials;
 		return true;
@@ -165,4 +175,8 @@ class TestRedisClient {
 		$this->closed = true;
 		return true;
 	}
+}
+
+if(!class_exists(Redis::class)) {
+	class_alias(TestRedisClient::class, Redis::class);
 }
