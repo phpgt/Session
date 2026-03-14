@@ -5,7 +5,7 @@ class SessionStoreFactory {
 	public function create(
 		string $namespace,
 		Session $session,
-	):SessionStore {
+	):SessionStoreInterface {
 		$namespaceParts = explode(".", $namespace);
 		$store = new SessionStore(
 			array_shift($namespaceParts),

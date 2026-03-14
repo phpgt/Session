@@ -42,6 +42,43 @@ else {
 }
 ```
 
+## Redis session storage
+
+This package now includes `Gt\Session\RedisHandler` for shared session storage.
+It works with Redis-compatible backends such as Redis and Valkey, and is intended
+for deployments where application nodes are disposable and session state needs to
+survive traffic moving between servers.
+
+`RedisHandler` expects `save_path` to be a DSN rather than a filesystem path.
+It uses the `phpredis` extension at runtime.
+
+Example production config:
+
+```ini
+[session]
+handler=Gt\Session\RedisHandler
+save_path=rediss://default:secret@example-redis.internal:25061/0?prefix=GT:&ttl=1440
+name=GT
+use_cookies=true
+```
+
+Supported DSN forms:
+
+- `redis://host:6379`
+- `redis://:password@host:6379/0`
+- `redis://username:password@host:6379/0`
+- `rediss://username:password@host:6379/0`
+
+Useful query parameters:
+
+- `prefix`: key prefix for stored sessions, defaults to `<session-name>:`
+- `ttl`: session lifetime in seconds, defaults to `session.gc_maxlifetime`
+- `timeout`: connection timeout in seconds
+- `read_timeout`: socket read timeout in seconds
+- `persistent=1`: enable persistent connections
+- `persistent_id`: optional persistent connection pool id
+- `verify_peer=0` / `verify_peer_name=0`: optional TLS verification flags
+
 # Proudly sponsored by
 
 [JetBrains Open Source sponsorship program](https://www.jetbrains.com/community/opensource/)

@@ -10,9 +10,7 @@ use Gt\TypeSafeGetter\TypeSafeGetter;
  * @extends ArrayIterator<string, mixed>
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
-class SessionStore
-	extends ArrayIterator
-	implements SessionContainer, TypeSafeGetter, Countable {
+class SessionStore extends ArrayIterator implements SessionStoreInterface {
 	use NullableTypeSafeGetter;
 
 	protected string $name;

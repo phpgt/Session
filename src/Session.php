@@ -51,7 +51,7 @@ class Session implements SessionContainer, TypeSafeGetter {
 
 		$this->id = $id;
 
-		$sessionPath = $this->getAbsolutePath(
+		$sessionPath = $this->normaliseSavePath(
 			$config["save_path"] ?? self::DEFAULT_SESSION_PATH
 		);
 		$sessionName = $config["name"] ?? self::DEFAULT_SESSION_NAME;
@@ -81,7 +81,7 @@ class Session implements SessionContainer, TypeSafeGetter {
 	public function getStore(
 		string $namespace,
 		bool $createIfNotExists = false
-	):?SessionStore {
+	):?SessionStoreInterface {
 		return $this->store->getStore(
 			$namespace,
 			$createIfNotExists
@@ -113,7 +113,11 @@ class Session implements SessionContainer, TypeSafeGetter {
 		return session_id() ?: "";
 	}
 
-	protected function getAbsolutePath(string $path):string {
+	protected function normaliseSavePath(string $path):string {
+		if($this->isDsn($path)) {
+			return $path;
+		}
+
 		$path = str_replace(
 			["/", "\\"],
 			DIRECTORY_SEPARATOR,
@@ -128,6 +132,10 @@ class Session implements SessionContainer, TypeSafeGetter {
 		}
 
 		return $path;
+	}
+
+	protected function isDsn(string $path):bool {
+		return (bool)preg_match('/^[a-z][a-z0-9+.-]*:\/\//i', $path);
 	}
 
 	/** @SuppressWarnings("PHPMD.Superglobals") */
@@ -166,12 +174,15 @@ class Session implements SessionContainer, TypeSafeGetter {
 	 * @param string $sessionPath
 	 * @param string $sessionName
 	 * @param array<string,mixed> $config
+	 * @SuppressWarnings("PHPMD.UnusedFormalParameter")
 	 * @return void
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundInImplementedInterfaceAfterLastUsed
 	private function attemptStart(
 		string $sessionPath,
 		string $sessionName,
 		array $config,
+		?string $unusedContext = null,
 	):void {
 		$sessionOptions = $this->getSessionOptions(
 			$sessionPath,
