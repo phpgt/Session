@@ -71,9 +71,11 @@ class RedisHandler extends Handler {
 		return $this->requireClient()->del($this->getKey($id)) >= 0;
 	}
 
+	// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundInExtendedClass
 	public function gc(int $maxLifeTime):int|false {
 		return 0;
 	}
+	// phpcs:enable
 
 	/**
 	 * @return array{
@@ -97,13 +99,41 @@ class RedisHandler extends Handler {
 
 		parse_str($parts["query"] ?? "", $query);
 
+		[$host, $context] = $this->parseHostAndContext($parts, $query);
+
+		return [
+			"host" => $host,
+			"port" => (int)($parts["port"] ?? self::DEFAULT_PORT),
+			"timeout" => (float)($query["timeout"] ?? 0),
+			"readTimeout" => (float)($query["read_timeout"] ?? 0),
+			"persistentId" => $this->parsePersistentId($query),
+			"prefix" => $this->parsePrefix($query, $name),
+			"ttl" => (int)($query["ttl"] ?? ini_get("session.gc_maxlifetime")),
+			"database" => $this->parseDatabase($parts),
+			"auth" => $this->parseAuth($parts),
+			"context" => $context,
+		];
+	}
+
+	/**
+	 * @param array<string,mixed> $parts
+	 * @param array<string,mixed> $query
+	 * @return array{
+	 *   0:string,
+	 *   1:array{stream:array{verify_peer:bool,verify_peer_name:bool}}|null
+	 * }
+	 */
+	private function parseHostAndContext(array $parts, array $query):array {
 		$scheme = strtolower($parts["scheme"] ?? "redis");
 		$host = $parts["host"];
-		$context = null;
 
-		if(in_array($scheme, ["rediss", "tls"], true)) {
-			$host = "tls://$host";
-			$context = [
+		if(!in_array($scheme, ["rediss", "tls"], true)) {
+			return [$host, null];
+		}
+
+		return [
+			"tls://$host",
+			[
 				"stream" => [
 					"verify_peer" => filter_var(
 						$query["verify_peer"] ?? true,
@@ -114,46 +144,58 @@ class RedisHandler extends Handler {
 						FILTER_VALIDATE_BOOL
 					),
 				],
-			];
-		}
-		/** @var array{stream:array{verify_peer:bool,verify_peer_name:bool}}|null $context */
+			],
+		];
+	}
 
-		$auth = null;
+	/**
+	 * @param array<string,mixed> $parts
+	 * @return array{string,string}|string|null
+	 */
+	private function parseAuth(array $parts):array|string|null {
 		if(isset($parts["user"]) && $parts["user"] !== "" && isset($parts["pass"])) {
-			$auth = [rawurldecode($parts["user"]), rawurldecode($parts["pass"])];
-		}
-		elseif(isset($parts["pass"])) {
-			$auth = rawurldecode($parts["pass"]);
+			return [rawurldecode($parts["user"]), rawurldecode($parts["pass"])];
 		}
 
-		$persistentId = null;
+		if(isset($parts["pass"])) {
+			return rawurldecode($parts["pass"]);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param array<string,mixed> $query
+	 */
+	private function parsePersistentId(array $query):?string {
 		if(
-			isset($query["persistent"])
-			&& filter_var($query["persistent"], FILTER_VALIDATE_BOOL)
+			!isset($query["persistent"])
+			|| !filter_var($query["persistent"], FILTER_VALIDATE_BOOL)
 		) {
-			$persistentId = is_string($query["persistent_id"] ?? null)
-				? $query["persistent_id"]
-				: "phpgt-session";
+			return null;
 		}
 
-		$prefix = is_string($query["prefix"] ?? null)
+		return is_string($query["persistent_id"] ?? null)
+			? $query["persistent_id"]
+			: "phpgt-session";
+	}
+
+	/**
+	 * @param array<string,mixed> $query
+	 */
+	private function parsePrefix(array $query, string $name):string {
+		return is_string($query["prefix"] ?? null)
 			? $query["prefix"]
 			: $name . self::DEFAULT_PREFIX_SEPARATOR;
+	}
 
-		return [
-			"host" => $host,
-			"port" => (int)($parts["port"] ?? self::DEFAULT_PORT),
-			"timeout" => (float)($query["timeout"] ?? 0),
-			"readTimeout" => (float)($query["read_timeout"] ?? 0),
-			"persistentId" => $persistentId,
-			"prefix" => $prefix,
-			"ttl" => (int)($query["ttl"] ?? ini_get("session.gc_maxlifetime")),
-			"database" => isset($parts["path"])
-				? (int)trim($parts["path"], "/")
-				: 0,
-			"auth" => $auth,
-			"context" => $context,
-		];
+	/**
+	 * @param array<string,mixed> $parts
+	 */
+	private function parseDatabase(array $parts):int {
+		return isset($parts["path"])
+			? (int)trim($parts["path"], "/")
+			: 0;
 	}
 
 	private function getKey(string $sessionId):string {
