@@ -25,7 +25,16 @@
 		<exclude name="ShortMethodName" />
 	</rule>
 
-	<rule ref="rulesets/unusedcode.xml">
+	<rule ref="rulesets/unusedcode.xml/UnusedPrivateField">
+	</rule>
+
+	<rule ref="rulesets/unusedcode.xml/UnusedLocalVariable">
+	</rule>
+
+	<rule ref="rulesets/unusedcode.xml/UnusedPrivateMethod">
+	</rule>
+
+	<rule ref="rulesets/unusedcode.xml/UnusedFormalParameter">
 	</rule>
 
 	<rule ref="rulesets/naming.xml/ShortVariable">

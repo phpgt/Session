@@ -174,12 +174,15 @@ class Session implements SessionContainer, TypeSafeGetter {
 	 * @param string $sessionPath
 	 * @param string $sessionName
 	 * @param array<string,mixed> $config
+	 * @SuppressWarnings("PHPMD.UnusedFormalParameter")
 	 * @return void
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundInImplementedInterfaceAfterLastUsed
 	private function attemptStart(
 		string $sessionPath,
 		string $sessionName,
 		array $config,
+		?string $unusedContext = null,
 	):void {
 		$sessionOptions = $this->getSessionOptions(
 			$sessionPath,
