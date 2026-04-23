@@ -1,5 +1,5 @@
 <?php
-namespace Gt\Session;
+namespace GT\Session;
 
 class SessionStoreFactory {
 	public function create(

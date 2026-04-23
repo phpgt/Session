@@ -1,5 +1,5 @@
 <?php
-namespace Gt\Session;
+namespace GT\Session;
 
 interface SessionContainer {
 	public function get(string $key):mixed;

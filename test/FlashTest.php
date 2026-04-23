@@ -1,8 +1,8 @@
 <?php
 
-use Gt\Session\Flash;
-use Gt\Session\FlashMessage;
-use Gt\Session\SessionStoreInterface;
+use GT\Session\Flash;
+use GT\Session\FlashMessage;
+use GT\Session\SessionStoreInterface;
 use PHPUnit\Framework\TestCase;
 
 class FlashTest extends TestCase {

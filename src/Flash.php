@@ -1,5 +1,5 @@
 <?php
-namespace Gt\Session;
+namespace GT\Session;
 
 use RuntimeException;
 use SplQueue;

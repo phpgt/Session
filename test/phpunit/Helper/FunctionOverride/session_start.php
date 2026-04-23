@@ -1,7 +1,7 @@
 <?php
-namespace Gt\Session;
+namespace GT\Session;
 
-use Gt\Session\Test\Helper\FunctionMocker;
+use GT\Session\Test\Helper\FunctionMocker;
 
 function session_start() {
 	FunctionMocker::$mockCalls["session_start"] []= func_get_args();

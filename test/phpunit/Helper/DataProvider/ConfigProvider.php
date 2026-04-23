@@ -1,7 +1,7 @@
 <?php
-namespace Gt\Session\Test\Helper\DataProvider;
+namespace GT\Session\Test\Helper\DataProvider;
 
-use Gt\Session\Handler;
+use GT\Session\Handler;
 
 trait ConfigProvider {
 	public function data_randomConfig():array {

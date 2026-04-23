@@ -1,6 +1,6 @@
 <?php /** @noinspection PhpUnused */
 
-namespace Gt\Session;
+namespace GT\Session;
 
 use SessionHandler;
 use SessionHandlerInterface;

@@ -1,5 +1,5 @@
 <?php
-namespace Gt\Session\Test\Helper;
+namespace GT\Session\Test\Helper;
 
 class FunctionMocker {
 	public static $mockCalls = [];

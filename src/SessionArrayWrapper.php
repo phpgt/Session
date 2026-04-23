@@ -1,5 +1,5 @@
 <?php
-namespace Gt\Session;
+namespace GT\Session;
 
 class SessionArrayWrapper implements SessionContainer {
 	/** @var array<string, mixed> */

@@ -1,7 +1,7 @@
 <?php
-namespace Gt\Session\Test;
+namespace GT\Session\Test;
 
-use Gt\Session\SessionArrayWrapper;
+use GT\Session\SessionArrayWrapper;
 use PHPUnit\Framework\TestCase;
 
 class SessionArrayWrapperTest extends TestCase {
