@@ -1,7 +1,7 @@
 <?php
-namespace Gt\Session\Test;
+namespace GT\Session\Test;
 
-use Gt\Session\RedisHandler;
+use GT\Session\RedisHandler;
 use PHPUnit\Framework\TestCase;
 use Redis;
 

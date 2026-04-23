@@ -1,5 +1,5 @@
 <?php
-namespace Gt\Session;
+namespace GT\Session;
 
 use Countable;
 use Gt\TypeSafeGetter\TypeSafeGetter;

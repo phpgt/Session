@@ -19,7 +19,7 @@ Sessions are addressed using dot notation, allowing for handling categories of s
 	<img src="https://badge.status.php.gt/session-version.svg" alt="Current version" />
 </a>
 <a href="http://www.php.gt/session" target="_blank">
-	<img src="https://badge.status.php.gt/session-docs.svg" alt="PHP.Gt/Session documentation" />
+	<img src="https://badge.status.php.gt/session-docs.svg" alt="PHP.GT/Session documentation" />
 </a>
 
 ## Example usage: Welcome a user by their first name or log out the user
@@ -44,7 +44,7 @@ else {
 
 ## Redis session storage
 
-This package now includes `Gt\Session\RedisHandler` for shared session storage.
+This package now includes `GT\Session\RedisHandler` for shared session storage.
 It works with Redis-compatible backends such as Redis and Valkey, and is intended
 for deployments where application nodes are disposable and session state needs to
 survive traffic moving between servers.
@@ -56,7 +56,7 @@ Example production config:
 
 ```ini
 [session]
-handler=Gt\Session\RedisHandler
+handler=GT\Session\RedisHandler
 save_path=rediss://default:secret@example-redis.internal:25061/0?prefix=GT:&ttl=1440
 name=GT
 use_cookies=true

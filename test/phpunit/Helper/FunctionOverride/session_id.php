@@ -1,6 +1,6 @@
 <?php
-namespace Gt\Session;
+namespace GT\Session;
 function session_id() {
-	\Gt\Session\Test\Helper\FunctionMocker::$mockCalls["session_id"] []= func_get_args();
+	\GT\Session\Test\Helper\FunctionMocker::$mockCalls["session_id"] []= func_get_args();
 	return "TEST";
 }

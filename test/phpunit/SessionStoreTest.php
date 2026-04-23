@@ -1,13 +1,13 @@
 <?php
-namespace Gt\Session\Test;
+namespace GT\Session\Test;
 
 use DateTime;
-use Gt\Session\Handler;
-use Gt\Session\Session;
-use Gt\Session\SessionStore;
-use Gt\Session\SessionStoreInterface;
-use Gt\Session\Test\Helper\FunctionMocker;
-use Gt\Session\Test\Helper\DataProvider\KeyValuePairProvider;
+use GT\Session\Handler;
+use GT\Session\Session;
+use GT\Session\SessionStore;
+use GT\Session\SessionStoreInterface;
+use GT\Session\Test\Helper\FunctionMocker;
+use GT\Session\Test\Helper\DataProvider\KeyValuePairProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use SessionHandler;

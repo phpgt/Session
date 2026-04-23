@@ -1,5 +1,5 @@
 <?php
-namespace Gt\Session;
+namespace GT\Session;
 
 use Redis;
 use RuntimeException;
@@ -205,7 +205,7 @@ class RedisHandler extends Handler {
 	protected function createClient():Redis {
 		if(!class_exists(Redis::class)) {
 			throw new RuntimeException(
-				"The phpredis extension is required to use Gt\\Session\\RedisHandler."
+				"The phpredis extension is required to use GT\\Session\\RedisHandler."
 			);
 		}
 

@@ -1,8 +1,8 @@
 <?php
-namespace Gt\Session\Test\Helper\DataProvider;
+namespace GT\Session\Test\Helper\DataProvider;
 
-use Gt\Session\Handler;
-use Gt\Session\Test\SessionStoreTest;
+use GT\Session\Handler;
+use GT\Session\Test\SessionStoreTest;
 
 trait KeyValuePairProvider {
 	public static function data_randomKeyValuePairs():array {
