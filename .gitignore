@@ -1,4 +1,5 @@
 /vendor
-/test/unit/_coverage
+/test/phpunit/_coverage
+/test/phpunit/.phpunit.cache
 /.idea
 *.phar
