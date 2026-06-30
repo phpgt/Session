@@ -3,16 +3,50 @@ namespace GT\Session;
 
 use Redis;
 use RuntimeException;
+use Throwable;
 
 class RedisHandler extends Handler {
+	private const EMPTY_PHP_ARRAY = "a:0:{}";
 	private const DEFAULT_PORT = 6379;
 	private const DEFAULT_PREFIX_SEPARATOR = ":";
 	private ?Redis $client = null;
+	/** @var array{
+	 *   host:string,
+	 *   port:int,
+	 *   timeout:float,
+	 *   readTimeout:float,
+	 *   persistentId:?string,
+	 *   prefix:string,
+	 *   ttl:int,
+	 *   database:int,
+	 *   auth:array{string,string}|string|null,
+	 *   context:array{stream:array{verify_peer:bool,verify_peer_name:bool}}|null
+	 * }|null
+	 */
+	private ?array $config = null;
 	private string $prefix = "";
 	private int $ttl = 0;
 
 	public function open(string $savePath, string $name):bool {
 		$config = $this->parseSavePath($savePath, $name);
+		$this->config = $config;
+		return $this->connect($config);
+	}
+
+	/** @param array{
+	 *   host:string,
+	 *   port:int,
+	 *   timeout:float,
+	 *   readTimeout:float,
+	 *   persistentId:?string,
+	 *   prefix:string,
+	 *   ttl:int,
+	 *   database:int,
+	 *   auth:array{string,string}|string|null,
+	 *   context:array{stream:array{verify_peer:bool,verify_peer_name:bool}}|null
+	 * } $config
+	 */
+	private function connect(array $config):bool {
 		$client = $this->createClient();
 
 		$connected = $client->connect(
@@ -48,27 +82,46 @@ class RedisHandler extends Handler {
 			return true;
 		}
 
-		return $this->client->close();
+		try {
+			return $this->client->close();
+		}
+		catch(Throwable) {
+			return true;
+		}
+		finally {
+			$this->client = null;
+		}
 	}
 
 	public function read(string $sessionId):string {
-		$value = $this->requireClient()->get($this->getKey($sessionId));
+		$value = $this->retryOnce(
+			fn() => $this->requireClient()->get($this->getKey($sessionId))
+		);
 		return is_string($value) ? $value : "";
 	}
 
 	public function write(string $sessionId, string $sessionData):bool {
-		$client = $this->requireClient();
+		if($sessionData === self::EMPTY_PHP_ARRAY) {
+			return true;
+		}
+
 		$key = $this->getKey($sessionId);
 
 		if($this->ttl > 0) {
-			return $client->setEx($key, $this->ttl, $sessionData);
+			return $this->retryOnce(
+				fn() => $this->requireClient()->setEx($key, $this->ttl, $sessionData)
+			);
 		}
 
-		return $client->set($key, $sessionData);
+		return $this->retryOnce(
+			fn() => $this->requireClient()->set($key, $sessionData)
+		);
 	}
 
 	public function destroy(string $id = ""):bool {
-		return $this->requireClient()->del($this->getKey($id)) >= 0;
+		return $this->retryOnce(
+			fn() => $this->requireClient()->del($this->getKey($id))
+		) >= 0;
 	}
 
 	// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundInExtendedClass
@@ -218,5 +271,29 @@ class RedisHandler extends Handler {
 		}
 
 		return $this->client;
+	}
+
+	private function reconnect():void {
+		if(is_null($this->config)) {
+			throw new RuntimeException("RedisHandler::open() must be called before reconnect.");
+		}
+
+		$this->close();
+		$this->connect($this->config);
+	}
+
+	/**
+	 * @template T
+	 * @param callable():T $callback
+	 * @return T
+	 */
+	private function retryOnce(callable $callback):mixed {
+		try {
+			return $callback();
+		}
+		catch(Throwable) {
+			$this->reconnect();
+			return $callback();
+		}
 	}
 }
