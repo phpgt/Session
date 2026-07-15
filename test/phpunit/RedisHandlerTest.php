@@ -5,6 +5,11 @@ use GT\Session\RedisHandler;
 use PHPUnit\Framework\TestCase;
 use Redis;
 
+if(!class_exists(Redis::class)) {
+	class TestRedisClientBase {}
+	class_alias(TestRedisClientBase::class, "Redis");
+}
+
 class RedisHandlerTest extends TestCase {
 	public function testOpenParsesStandardDsn():void {
 		$client = new TestRedisClient();
@@ -91,9 +96,44 @@ class RedisHandlerTest extends TestCase {
 		self::assertTrue($sut->close());
 		self::assertTrue($client->closed);
 	}
+
+	public function testEmptyNativePhpSessionWriteDoesNotOverwriteStoredSession():void {
+		$client = new TestRedisClient();
+		$sut = new class($client) extends RedisHandler {
+			public function __construct(private readonly TestRedisClient $client) {}
+
+			protected function createClient():Redis {
+				/** @phpstan-ignore-next-line */
+				return $this->client;
+			}
+		};
+		$sut->open("redis://cache.internal", "GT");
+		$sut->write("abc123", "stored-session");
+		$sut->write("abc123", "a:0:{}");
+
+		self::assertSame("stored-session", $sut->read("abc123"));
+	}
+
+	public function testCommandRetriesAfterDisconnectedClient():void {
+		$client = new TestRedisClient();
+		$sut = new class($client) extends RedisHandler {
+			public function __construct(private readonly TestRedisClient $client) {}
+
+			protected function createClient():Redis {
+				/** @phpstan-ignore-next-line */
+				return $this->client;
+			}
+		};
+		$sut->open("redis://cache.internal", "GT");
+		$client->failNextSetEx = true;
+
+		self::assertTrue($sut->write("abc123", "payload"));
+		self::assertSame("payload", $sut->read("abc123"));
+		self::assertSame(2, $client->connectCount);
+	}
 }
 
-class TestRedisClient {
+class TestRedisClient extends Redis {
 	/** @var array<string,mixed> */
 	public array $connectParameters = [];
 	/** @var array<int,array{key:string,ttl:int,value:string}> */
@@ -107,6 +147,8 @@ class TestRedisClient {
 	/** @var array<string,string> */
 	public array $data = [];
 	public int $deleted = 0;
+	public int $connectCount = 0;
+	public bool $failNextSetEx = false;
 	public bool $closed = false;
 
 	/**
@@ -114,20 +156,21 @@ class TestRedisClient {
 	 */
 	public function connect(
 		string $host,
-		int $port,
+		int $port = 6379,
 		float $timeout = 0,
-		?string $persistentId = null,
-		int $retryInterval = 0,
-		float $readTimeout = 0,
+		?string $persistent_id = null,
+		int $retry_interval = 0,
+		float $read_timeout = 0,
 		?array $context = null,
 	):bool {
+		$this->connectCount++;
 		$this->connectParameters = [
 			"host" => $host,
 			"port" => $port,
 			"timeout" => $timeout,
-			"persistentId" => $persistentId,
-			"retryInterval" => $retryInterval,
-			"readTimeout" => $readTimeout,
+			"persistentId" => $persistent_id,
+			"retryInterval" => $retry_interval,
+			"readTimeout" => $read_timeout,
 			"context" => $context,
 		];
 		return true;
@@ -136,12 +179,12 @@ class TestRedisClient {
 	/**
 	 * @param array{string,string}|string $credentials
 	 */
-	public function auth(array|string $credentials):bool {
+	public function auth(mixed $credentials):Redis|bool {
 		$this->authCalls []= $credentials;
 		return true;
 	}
 
-	public function select(int $database):bool {
+	public function select(int $database):Redis|bool {
 		$this->selectCalls []= $database;
 		return true;
 	}
@@ -150,23 +193,32 @@ class TestRedisClient {
 		return $this->data[$key] ?? false;
 	}
 
-	public function set(string $key, string $value):bool {
+	public function set(string $key, mixed $value, mixed $options = null):Redis|string|bool {
 		$this->setCalls []= $key;
-		$this->data[$key] = $value;
+		$this->data[$key] = (string)$value;
 		return true;
 	}
 
-	public function setEx(string $key, int $ttl, string $value):bool {
+	public function setEx(string $key, int $ttl, mixed $value) {
+		if($this->failNextSetEx) {
+			$this->failNextSetEx = false;
+			throw new \RedisException("Redis server went away");
+		}
+
 		$this->setExCalls []= [
 			"key" => $key,
 			"ttl" => $ttl,
-			"value" => $value,
+			"value" => (string)$value,
 		];
-		$this->data[$key] = $value;
+		$this->data[$key] = (string)$value;
 		return true;
 	}
 
-	public function del(string $key):int {
+	public function del(array|string $key, string ...$otherKeys):Redis|int|false {
+		if(is_array($key)) {
+			$key = reset($key);
+		}
+
 		unset($this->data[$key]);
 		return ++$this->deleted;
 	}
@@ -175,8 +227,4 @@ class TestRedisClient {
 		$this->closed = true;
 		return true;
 	}
-}
-
-if(!class_exists(Redis::class)) {
-	class_alias(TestRedisClient::class, Redis::class);
 }
