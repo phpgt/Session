@@ -3,8 +3,8 @@ namespace GT\Session;
 
 use ArrayIterator;
 use Countable;
-use Gt\TypeSafeGetter\NullableTypeSafeGetter;
-use Gt\TypeSafeGetter\TypeSafeGetter;
+use GT\TypeSafeGetter\NullableTypeSafeGetter;
+use GT\TypeSafeGetter\TypeSafeGetter;
 
 /**
  * @extends ArrayIterator<string, mixed>
