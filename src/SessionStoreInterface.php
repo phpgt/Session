@@ -2,7 +2,7 @@
 namespace GT\Session;
 
 use Countable;
-use Gt\TypeSafeGetter\TypeSafeGetter;
+use GT\TypeSafeGetter\TypeSafeGetter;
 
 interface SessionStoreInterface extends SessionContainer, TypeSafeGetter, Countable {
 	public function setData(string $key, mixed $value):void;
